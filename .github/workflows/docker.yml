@@ -27,28 +27,28 @@ jobs:
       - name: Prepare image tags
         id: meta
         run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           BRANCH="${GITHUB_REF_NAME}"
           SHA="${GITHUB_SHA::7}"
 
-          # Convert branch name to a valid Docker tag
           BRANCH_TAG=$(echo "$BRANCH" \
             | tr '[:upper:]' '[:lower:]' \
             | sed 's#[^a-z0-9_.-]#-#g')
 
+          IMAGE="ghcr.io/${OWNER}/landing-page"
+
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
           echo "branch_tag=$BRANCH_TAG" >> "$GITHUB_OUTPUT"
           echo "sha_tag=$BRANCH_TAG-$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Build Docker image
         run: |
           docker build \
-            -t ghcr.io/${{ github.repository_owner }}/landing-page:${{ steps.meta.outputs.branch_tag }} \
-            -t ghcr.io/${{ github.repository_owner }}/landing-page:${{ steps.meta.outputs.sha_tag }} \
+            -t "${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.branch_tag }}" \
+            -t "${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha_tag }}" \
             .
 
-      - name: Push Docker image
+      - name: Push Docker images
         run: |
-          docker push \
-            ghcr.io/${{ github.repository_owner }}/landing-page:${{ steps.meta.outputs.branch_tag }}
-
-          docker push \
-            ghcr.io/${{ github.repository_owner }}/landing-page:${{ steps.meta.outputs.sha_tag }}
+          docker push "${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.branch_tag }}"
+          docker push "${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha_tag }}"
