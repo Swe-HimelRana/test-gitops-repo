@@ -55,20 +55,26 @@ jobs:
       - name: Checkout GitOps repository
         uses: actions/checkout@v4
         with:
-          repository: Swe-HimelRana/test-gitops-helm
+          repository: Swe-HimelRana/test-gitops-helm-repo
           token: ${{ secrets.GITOPS_TOKEN }}
           path: gitops
-      
+
       - name: Update Helm image tag
         working-directory: gitops
         run: |
           TAG="${{ steps.meta.outputs.sha_tag }}"
-      
+
           sed -i "s/^  tag:.*/  tag: ${TAG}/" helm/values.yml
-      
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      
+
           git add helm/values.yml
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
           git commit -m "Update landing-page image to ${TAG}"
           git push
